@@ -1,5 +1,8 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:future/pages/login/recovery_page.dart';
+import 'package:future/pages/login/register_page.dart';
+import 'package:future/widgets/login_text_input.dart';
 
 class LoginPage extends StatefulWidget{
 
@@ -58,35 +61,32 @@ class LoginPageState extends State<LoginPage>{
                     ),
                     child: Column(
                       children: <Widget>[
-                        TextFormField(
-                          decoration: InputDecoration(
-                            icon: Icon(Icons.people),
-                            labelText: 'Login',
-                            hintText: 'exemple@exemple.com'
-                          ),
-                          keyboardType: TextInputType.emailAddress,
+                        LoginTextInput(
+                          icon: Icon(Icons.email), 
+                          labelText: 'Login', 
+                          hintText: 'exemple@exemple.com',
+                          keyboardType: TextInputType.emailAddress
                         ),
-                        TextFormField(
-                          decoration: InputDecoration(
-                          icon: Icon(Icons.vpn_key),
-                            labelText: 'Password',
-                            hintText: 'Type your password'
-                          ),
+                        LoginTextInput(
+                          icon: Icon(Icons.vpn_key), 
+                          labelText: 'Password', 
+                          hintText: 'Type your password',
                           keyboardType: TextInputType.text,
-                          obscureText: true,
                         ),
                         Padding(
                           padding: EdgeInsets.only(top: 16), 
                           child: SizedBox(
                             width: double.maxFinite,
+                            height: 45,
                             child: RaisedButton(
+                              elevation: 10,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                               color: Colors.white,
                               textColor: Color.fromRGBO(255, 89, 89, 1),
                               child:Text('LOGIN',style: TextStyle(fontWeight: FontWeight.bold)),
                               onPressed: (){
                                 print('clicou no botao');
-                              }
+                              },
                             ),
                           )
                         ),
@@ -96,7 +96,7 @@ class LoginPageState extends State<LoginPage>{
                 )
               ),
               Padding(
-                padding: EdgeInsets.only(top:24),
+                padding: EdgeInsets.only(top:40),
                 child: Center(
                   child:RichText(
                     text: TextSpan(
@@ -111,8 +111,15 @@ class LoginPageState extends State<LoginPage>{
                             decoration: TextDecoration.underline,
                             ),
                           recognizer: TapGestureRecognizer()
-                            ..onTap = () {
-                              print('implementar tela de cadastro');
+                            ..onTap = () async {
+                              var navigationResult = await Navigator.push(context, MaterialPageRoute(
+                                builder: (context) => RegisterPage()
+                              ));
+                              if (navigationResult == true){
+                                showDialog(context: context,
+                                  builder: (context) => AlertDialog(title: Text('Navigation result success'))
+                                );
+                              } 
                             }
                         ),
                         TextSpan(text: ' right now!'),
@@ -122,7 +129,7 @@ class LoginPageState extends State<LoginPage>{
                 ),
               ),
               Padding(
-                padding: EdgeInsets.only(top: 64),
+                padding: EdgeInsets.only(top: 48),
                 child: Center(
                   child: RichText(
                     text: TextSpan(
@@ -138,7 +145,9 @@ class LoginPageState extends State<LoginPage>{
                             ),
                           recognizer: TapGestureRecognizer()
                             ..onTap = () {
-                              print('implementar tela de recuperar senha');
+                              Navigator.push(context, MaterialPageRoute(
+                                builder: (context) => RecoveryPage()
+                              )); 
                             }
                         ),
                       ]
