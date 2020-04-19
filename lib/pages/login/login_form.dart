@@ -1,9 +1,14 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:future/pages/navigation_bottom/main_page.dart';
+import 'package:future/connection/firebase_connection.dart';
+import 'package:future/navigation_bottom/main_page.dart';
+import 'package:future/pages/login/bloc/login_bloc.dart';
 import 'package:future/pages/register/register_page.dart';
 import 'package:future/pages/revovery/recovery_page.dart';
+import 'package:future/util/border_inputs.dart';
+import 'package:future/util/change_focus.dart';
+import 'package:future/util/email_validation.dart';
+import 'package:future/util/password_validation.dart';
 
 class LoginForm extends StatefulWidget {
   @override
@@ -14,7 +19,10 @@ class _LoginFormState extends State<LoginForm> {
 
   String _email;
   String _password;
-  bool _obscure = true;
+
+  LoginBloc bloc = LoginBloc();
+  ConnectionWithFirebase _auth = ConnectionWithFirebase();
+
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   
@@ -22,6 +30,8 @@ class _LoginFormState extends State<LoginForm> {
   final FocusNode _passwordFocus = FocusNode();
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +52,8 @@ class _LoginFormState extends State<LoginForm> {
                 padding: EdgeInsets.only(top: 16), 
                 child: _confirmFormButton(),
               ),
+              SizedBox(height:10),
+              _failLogin(),
               Padding(
                 padding: EdgeInsets.only(top:40),
                 child: Center(
@@ -75,7 +87,7 @@ class _LoginFormState extends State<LoginForm> {
                 ),
               ),
               Padding(
-                padding: EdgeInsets.only(top: 48,bottom: 32),
+                padding: EdgeInsets.only(top: 32,bottom: 16),
                 child: Center(
                   child: RichText(
                     text: TextSpan(
@@ -108,18 +120,18 @@ class _LoginFormState extends State<LoginForm> {
     );
   }
 
-  Future<void> signIn() async{
-    if(_formKey.currentState.validate()){
+  void navigatorTo(BuildContext context, user){
+    Navigator.push(context, MaterialPageRoute(
+      builder: (context) => MainPage(user: user),
+    ));
+  }
+
+  bool _validateForm(){
+    if (_formKey.currentState.validate()){
       _formKey.currentState.save();
-      try {
-        AuthResult user = await FirebaseAuth.instance.signInWithEmailAndPassword(email: _email, password: _password);
-        print(user.user.email);
-        await Navigator.push(context, MaterialPageRoute(
-          builder: (context) => MainPage(user: user.user),
-        ));
-      }catch(e){
-      }
-    }    
+      return true;
+    }
+    return false;
   }
 
   Widget _emailInput(){
@@ -129,32 +141,20 @@ class _LoginFormState extends State<LoginForm> {
         icon: Icon(Icons.email),
         labelText: 'Login',
         hintText: 'exemple@exemple.com',
-        border: _borderStyle(),
+        border: BorderInputs().borderStyle(),
       ),
       cursorColor: Colors.black,
       focusNode: _emailFocus,
       validator: (String value){
-        return _emailValidation(value);
+        return EmailValidation().emailValidation(value);
       },
       onSaved: (String value){
         _email = value;
       },
       keyboardType: TextInputType.emailAddress,
       textInputAction: TextInputAction.next,
-      onFieldSubmitted: (term) => _changeFocus(context, _emailFocus, _passwordFocus),
+      onFieldSubmitted: (term) => ChangeFocusForm().changeFocus(context, _emailFocus, _passwordFocus),
     );
-  }
-
-  String _emailValidation(String value) {
-    if (value.isEmpty) return 'E-mail is required';
-    if (!RegExp(r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
-    .hasMatch(value)) return 'Invalid e-mail typed';
-    return null;
-  }
-
-  _changeFocus(BuildContext context, FocusNode currentFocus, FocusNode nextFocus){
-    currentFocus.unfocus();
-    FocusScope.of(context).requestFocus(nextFocus);
   }
 
   Widget _confirmFormButton(){
@@ -170,55 +170,73 @@ class _LoginFormState extends State<LoginForm> {
         onPressed: () async {
           _formKey.currentState.reset();
           FocusScope.of(context).requestFocus(FocusNode());
-          signIn();
+          if (_validateForm()) {
+            dynamic result = await _auth.signIn(_email, _password);
+            if (result != null){
+              bloc.inputError.add('');
+              Navigator.push(context, MaterialPageRoute(
+                builder: (context) => MainPage(user: result),
+              ));
+            }else {
+              bloc.inputError.add('Failt to connect with this user, please verify your credentials.'); 
+            }
+          } 
         },
       ),
     );
   }
 
-  Widget _passwordInput(){
-    return TextFormField(
-      controller: _passwordController,
-      decoration: InputDecoration(
-        border: _borderStyle(),
-        icon: Icon(Icons.vpn_key),
-        labelText: 'Password',
-        hintText: 'Type your password',
-        suffixIcon: IconButton(
-          icon: _obscure ? Icon(Icons.visibility_off) : Icon(Icons.visibility), 
-          onPressed: (){  
-            _toggleVisibility();
-          }
-        )
-      ),
-      
-      cursorColor: Colors.black,
-      validator: (String value){
-        return (value.isEmpty) ? 'Password is required' : null;
-      },
-      onSaved: (String value){
-        _password = value;
-      },
-      focusNode: _passwordFocus,
-      keyboardType: TextInputType.text,
-      textInputAction: TextInputAction.done,
-      obscureText: _obscure ? _obscure : false,
+  Widget _failLogin(){
+    return StreamBuilder<Object>(
+      stream: bloc.outputError,
+      initialData: '',
+      builder: (context, snapshot) {
+        return Container(
+          color: Colors.red,
+          child: Text(
+            snapshot.data.toString(),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white
+            ),
+          ),
+        );
+      }
     );
   }
 
-  void _toggleVisibility(){
-    setState(() {
-      _obscure = !_obscure;
-    });
-  }
-  
-  _borderStyle(){
-    return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10.0),
-      borderSide: BorderSide(
-        color: Colors.black,
-        width: 2.0,
-      ),
+  Widget _passwordInput(){
+    return StreamBuilder<Object>(
+      initialData: true,
+      stream: bloc.output,
+      builder: (context, snapshot) {
+        return TextFormField(
+          controller: _passwordController,
+          decoration: InputDecoration(
+            border: BorderInputs().borderStyle(),
+            icon: Icon(Icons.vpn_key),
+            labelText: 'Password',
+            hintText: 'Type your password',
+            suffixIcon: IconButton(
+              icon: snapshot.data ? Icon(Icons.visibility_off) : Icon(Icons.visibility), 
+              onPressed: (){  
+                bloc.toggleVisibility();
+              }
+            )
+          ),
+          cursorColor: Colors.black,
+          validator: (String value){
+            return PasswordValidation().validatePassword(value);
+          },
+          onSaved: (String value){
+            _password = value;
+          },
+          focusNode: _passwordFocus,
+          keyboardType: TextInputType.text,
+          textInputAction: TextInputAction.done,
+          obscureText: snapshot.data ? snapshot.data : false,
+        );
+      }
     );
   }
 }

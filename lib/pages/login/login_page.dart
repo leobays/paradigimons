@@ -21,24 +21,13 @@ class LoginPageState extends State<LoginPage>{
           height: MediaQuery.of(context).size.height,
           decoration: BoxDecoration(
             color: Color.fromRGBO(248,248,255, 1)
-            // gradient: LinearGradient(
-            //   begin: Alignment.topCenter,
-            //   end: Alignment.bottomCenter,
-            //   colors: <Color>[
-            //     Color.fromRGBO(255, 130, 102, 1),
-            //     Color.fromRGBO(255, 89, 89, 1),
-            //   ]
-            // )
           ),
           child: SingleChildScrollView(
             child: Column(
               children: <Widget>[
-                Padding(
-                  padding: EdgeInsets.only(top: 25),
-                  child: Image(
-                    image: AssetImage('assets/login_app_foreground.png'),
-                    height: 300,
-                  ),
+                Image(
+                  image: AssetImage('assets/login_app_foreground.png'),
+                  height: 300,
                 ),
                 Center(
                   child:RichText(

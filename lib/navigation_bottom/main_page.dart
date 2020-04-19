@@ -1,9 +1,9 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:future/navigation_bottom/list/list_users.dart';
 
 class MainPage extends StatefulWidget {
 
-  final FirebaseUser user;
+  final user;
 
   MainPage({
     Key key,
@@ -21,7 +21,7 @@ class _MainPageState extends State<MainPage> {
   int _selectedPage = 0;
   final _pages = [
     Text('Home'),
-    Text('List'),
+    ListUsers(),
     Text('Settings'),
     Text('Exit'),
   ];

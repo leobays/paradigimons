@@ -1,5 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:future/util/border_inputs.dart';
+import 'package:future/util/change_focus.dart';
+import 'package:future/util/email_validation.dart';
+import 'package:future/util/password_validation.dart';
 
 class RegisterForm extends StatefulWidget {
   @override
@@ -15,6 +19,7 @@ class _RegisterFormState extends State<RegisterForm> {
 
   final TextEditingController _confirmPasswordController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
   final FocusNode _emailFocus = FocusNode();
   final FocusNode _passwordFocus = FocusNode();
   final FocusNode _confirmPasswordFocus = FocusNode();
@@ -59,27 +64,20 @@ class _RegisterFormState extends State<RegisterForm> {
         icon: Icon(Icons.email),
         labelText: 'Login',
         hintText: 'exemple@exemple.com',
-        border: _borderStyle(),
+        border: BorderInputs().borderStyle(),
       ),
       cursorColor: Colors.black,
       focusNode: _emailFocus,
       validator: (String value){
-        return _emailValidation(value);
+        return EmailValidation().emailValidation(value);
       },
       onSaved: (String value){
         _email = value;
       },
       keyboardType: TextInputType.emailAddress,
       textInputAction: TextInputAction.next,
-      onFieldSubmitted: (term) => _changeFocus(context, _emailFocus, _passwordFocus),
+      onFieldSubmitted: (term) => ChangeFocusForm().changeFocus(context, _emailFocus, _passwordFocus),
     );
-  }
-
-  String _emailValidation(String value) {
-    if (value.isEmpty) return 'E-mail is required';
-    if (!RegExp(r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
-    .hasMatch(value)) return 'Invalid e-mail typed.';
-    return null;
   }
 
   Widget _confirmSignUpForm(){
@@ -101,7 +99,7 @@ class _RegisterFormState extends State<RegisterForm> {
   Widget _passwordInput(){
     return TextFormField(
       decoration: InputDecoration(
-        border: _borderStyle(),
+        border: BorderInputs().borderStyle(),
         icon: Icon(Icons.vpn_key),
         labelText: 'Password',
         hintText: 'Type your password.',
@@ -116,21 +114,21 @@ class _RegisterFormState extends State<RegisterForm> {
       controller: _passwordController,
       focusNode: _passwordFocus,
       validator: (String value) =>
-        (value.isEmpty) ? 'Field must have six or mor caracters' : null,
+        PasswordValidation().passwordLength(value.length),
       onSaved: (String value){
         _password = value;
       },
       keyboardType: TextInputType.visiblePassword,
       obscureText: _obscurePassword ? true : false,
       textInputAction: TextInputAction.next,
-      onFieldSubmitted: (term) => _changeFocus(context, _passwordFocus, _confirmPasswordFocus),
+      onFieldSubmitted: (term) => ChangeFocusForm().changeFocus(context, _passwordFocus, _confirmPasswordFocus),
     );
   }
 
   Widget _confirmPasswordInput(){
     return TextFormField(
       decoration: InputDecoration(
-        border: _borderStyle(),
+        border: BorderInputs().borderStyle(),
         icon: Icon(Icons.vpn_key),
         labelText: 'Confirm Password',
         hintText: 'Type your password again.',
@@ -145,15 +143,21 @@ class _RegisterFormState extends State<RegisterForm> {
       controller: _confirmPasswordController,
       focusNode: _confirmPasswordFocus,
       validator: (String value) {
-        if (value.length < 6) return 'Field must have six or mor caracters';
-        if(_confirmPasswordController.text != _passwordController.text) return 'Password must be equal';
-        return null;
+        return PasswordValidation().passwordLenghtAndEqual(value.length, _passwordController.text, _confirmPasswordController.text);
       },
       obscureText: _obscureConfirmPassword ? true : false,
       keyboardType: TextInputType.visiblePassword,
       textInputAction: TextInputAction.done,
     ); 
   }
+
+  // String tste(String value) {
+  //   String that;
+  //   that = PasswordValidation().passwordLength(value.length);
+  //   if (that != null) return that;
+  //   that = PasswordValidation().passwordEqual(_passwordController.text, _confirmPasswordController.text);
+  //   return that;
+  // }
 
   void _toggleVisibilityConfirmPassword(){
     setState(() {
@@ -165,21 +169,6 @@ class _RegisterFormState extends State<RegisterForm> {
     setState(() {
       _obscurePassword = !_obscurePassword;
     });
-  }
-
-  _changeFocus(BuildContext context, FocusNode currentFocus, FocusNode nextFocus){
-    currentFocus.unfocus();
-    FocusScope.of(context).requestFocus(nextFocus);
-  }
-
-  _borderStyle(){
-    return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10.0),
-      borderSide: BorderSide(
-        color: Colors.black,
-        width: 2
-      ),
-    );
   }
 
   Future<void> _signUp() async{

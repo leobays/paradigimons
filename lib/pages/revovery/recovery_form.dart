@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:future/util/border_inputs.dart';
+import 'package:future/util/email_validation.dart';
 
 class RecoveryForm extends StatefulWidget {
   @override
@@ -76,35 +78,18 @@ class _RecoveryFormState extends State<RecoveryForm> {
         icon: Icon(Icons.email),
         labelText: 'Login',
         hintText: 'exemple@exemple.com',
-        border: _borderStyle(),
+        border: BorderInputs().borderStyle(),
       ),
       cursorColor: Colors.black,
       focusNode: _emailFocus,
       validator: (String value){
-        return _emailValidation(value);
+        return EmailValidation().emailValidation(value);
       },
       onSaved: (String value){
         _email = value;
       },
       keyboardType: TextInputType.emailAddress,
-      textInputAction: TextInputAction.next,
+      textInputAction: TextInputAction.done,
     );
-  }
-
-  _borderStyle(){
-    return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10.0),
-      borderSide: BorderSide(
-        color: Colors.black,
-        width: 2
-      ),
-    );
-  }
-
-  String _emailValidation(String value) {
-    if (value.isEmpty) return 'E-mail is required';
-    if (!RegExp(r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
-    .hasMatch(value)) return 'Invalid e-mail typed.';
-    return null;
   }
 }
